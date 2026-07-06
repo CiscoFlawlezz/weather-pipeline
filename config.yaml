@@ -1,0 +1,63 @@
+# ============================================================
+# Weather Pipeline Configuration — Milestone 1a
+# ============================================================
+# IMPORTANT: The series tickers below are CANDIDATES, not verified
+# facts. Only KXHIGHTPHX (Phoenix) has been confirmed against a
+# live Kalshi market URL. Run `python test_connections.py` to
+# empirically verify which series exist before trusting this list.
+#
+# Each Kalshi weather market settles on ONE specific NWS station.
+# A wrong station mapping silently corrupts all downstream data,
+# so every station_id below must be verified against the official
+# market rules page on kalshi.com before Milestone 1b collection
+# begins. Verification status is tracked per city.
+
+kalshi:
+  # Public market-data base URL (no authentication required for reads)
+  base_url: "https://api.elections.kalshi.com/trade-api/v2"
+  # Candlestick interval in minutes for daily sweeps: 60 = hourly.
+  # Valid values per API docs: 1, 60, 1440.
+  candlestick_interval: 60
+
+nws:
+  base_url: "https://api.weather.gov"
+  # NWS requests a descriptive User-Agent identifying your app.
+  # Replace the email with yours — it's how NWS contacts you if
+  # your traffic causes a problem (instead of just blocking you).
+  user_agent: "prediction-market-research-lab (ryaneastnc@gmail.com)"
+
+cities:
+  phoenix:
+    kalshi_series: "KXHIGHTPHX"     # VERIFIED via live market URL
+    station_id: "KPHX"              # UNVERIFIED — check market rules
+    lat: 33.4484
+    lon: -112.0740
+    verified: false                 # flip to true only after checking rules page
+  nyc:
+    kalshi_series: "KXHIGHNY"       # UNVERIFIED candidate
+    station_id: "KNYC"              # Central Park per Kalshi help docs
+    lat: 40.7789
+    lon: -73.9692
+    verified: false
+  chicago:
+    kalshi_series: "KXHIGHCHI"      # UNVERIFIED candidate
+    station_id: "KMDW"              # Midway per Kalshi trading blog
+    lat: 41.7868
+    lon: -87.7522
+    verified: false
+  miami:
+    kalshi_series: "KXHIGHMIA"      # UNVERIFIED candidate
+    station_id: "KMIA"              # Miami Intl per Kalshi trading blog
+    lat: 25.7933
+    lon: -80.2906
+    verified: false
+  austin:
+    kalshi_series: "KXHIGHAUS"      # UNVERIFIED candidate
+    station_id: "KAUS"              # Austin-Bergstrom per Kalshi trading blog
+    lat: 30.1975
+    lon: -97.6664
+    verified: false
+
+storage:
+  # SQLite database file, created on first run of Milestone 1b.
+  db_path: "data/pipeline.db"

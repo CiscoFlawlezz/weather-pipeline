@@ -1,0 +1,20 @@
+# Data and snapshots — protected by backup + hashing, not Git (Spec §7.1)
+data/
+snapshots/
+logs/
+
+# Databases anywhere in tree
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Secrets — belt and suspenders
+.env
+*credentials*
+*secret*
