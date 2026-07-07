@@ -1,20 +1,28 @@
-# Data and snapshots — protected by backup + hashing, not Git (Spec §7.1)
+# --- Data and snapshots: too large for Git; backed up separately ---
 data/
 snapshots/
-logs/
-
-# Databases anywhere in tree
-*.db
 *.sqlite
 *.sqlite3
+*.db
 
-# Python
+# --- Secrets: never commit credentials ---
+*.env
+.env
+secrets.yaml
+credentials.json
+
+# --- Python temporary files ---
 __pycache__/
 *.pyc
-venv/
 .venv/
+venv/
+env/
 
-# Secrets — belt and suspenders
-.env
-*credentials*
-*secret*
+# --- Logs ---
+logs/
+*.log
+
+# --- OS junk ---
+Thumbs.db
+Desktop.ini
+.DS_Store
