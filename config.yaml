@@ -28,36 +28,32 @@ nws:
 
 cities:
   phoenix:
-    kalshi_series: "KXHIGHTPHX"     # VERIFIED via live market URL
-    station_id: "KPHX"              # UNVERIFIED — check market rules
+    kalshi_series: "KXHIGHTPHX"     # series exists (live market URL + test_connections)
+    station_id: "KPHX"              # VERIFIED: Phoenix Sky Harbor, Kalshi rules 2026-07-09
     lat: 33.4484
     lon: -112.0740
-    verified: false                 # flip to true only after checking rules page
+    verified: true
   nyc:
-    kalshi_series: "KXHIGHNY"       # UNVERIFIED candidate
-    station_id: "KNYC"              # Central Park per Kalshi help docs
+    kalshi_series: "KXHIGHNY"       # series exists per test_connections; NOT confirmed via rules page
+    station_id: "KNYC"              # VERIFIED: "Central Park, New York" (NHIGH rules, wfo=okx) 2026-07-09
     lat: 40.7789
     lon: -73.9692
-    verified: false
+    verified: true
   chicago:
-    kalshi_series: "KXHIGHCHI"      # UNVERIFIED candidate
-    station_id: "KMDW"              # Midway per Kalshi trading blog
+    kalshi_series: "KXHIGHCHI"      # series exists per test_connections; NOT confirmed via rules page
+    station_id: "KMDW"              # VERIFIED: "Chicago Midway, Illinois" (CHIHIGH rules, wfo=lot) 2026-07-09
     lat: 41.7868
     lon: -87.7522
-    verified: false
+    verified: true
   miami:
-    kalshi_series: "KXHIGHMIA"      # UNVERIFIED candidate
-    station_id: "KMIA"              # Miami Intl per Kalshi trading blog
+    kalshi_series: "KXHIGHMIA"      # series exists per test_connections; NOT confirmed via rules page
+    station_id: "KMIA"              # VERIFIED: "Miami, FL" (MIAHIGH rules) 2026-07-09; 11am ET delay rule applies
     lat: 25.7933
     lon: -80.2906
-    verified: false
+    verified: true
   austin:
-    kalshi_series: "KXHIGHAUS"      # UNVERIFIED candidate
-    station_id: "KAUS"              # Austin-Bergstrom per Kalshi trading blog
+    kalshi_series: "KXHIGHAUS"      # series exists per test_connections; NOT confirmed via rules page
+    station_id: "KAUS"              # VERIFIED: "Austin Bergstrom" (AUSHIGH rules) 2026-07-09; trades CT; 11am ET delay rule
     lat: 30.1975
     lon: -97.6664
-    verified: false
-
-storage:
-  # SQLite database file, created on first run of Milestone 1b.
-  db_path: "data/pipeline.db"
+    verified: true
