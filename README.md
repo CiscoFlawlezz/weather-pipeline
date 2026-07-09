@@ -75,3 +75,4 @@ weather-pipeline/
   one nightly Kalshi sweep)
 - Success criterion: 14 consecutive days, zero silent failures
 
+
