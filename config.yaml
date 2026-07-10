@@ -57,3 +57,25 @@ cities:
     lat: 30.1975
     lon: -97.6664
     verified: true
+
+# ============================================================
+# Collection cadence — added for M2.T4 (CLI collector) + scheduler
+# ============================================================
+# How often each collector fetches. The CLI Daily Climate Report
+# is published once per station per day (and occasionally amended),
+# so a single daily sweep with a safety re-check is sufficient;
+# amendments land as new append-only rows, never overwrites.
+#
+# The values below are cadence INTENT that config.py exposes and
+# the collector/scheduler read. No collector hardcodes a cadence.
+# Times are local clock times for the scheduler (exported Task
+# Scheduler XML); the collector itself is time-agnostic.
+#
+# NOTE: sweep times are reasoned defaults, NOT verified against
+# observed CLI posting/amendment times for the five stations.
+# Adjust once real posting times are known (see Open Questions).
+collection:
+  nws_cli:
+    sweeps_per_day: 2
+    primary_sweep_local: "18:00"
+    amendment_recheck_local: "23:30"
