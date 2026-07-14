@@ -44,8 +44,20 @@ def test_base_urls_present():
 
 
 def test_cli_cadence_has_sweeps():
+    # Assert the invariants that matter, not a magic count: the cadence
+    # declares a positive number of sweeps, and that number equals the
+    # number of *_local sweep times actually configured. This catches
+    # config drifting out of sync with itself (e.g. bumping the count but
+    # forgetting to add the matching time) without breaking every time the
+    # deployed schedule legitimately changes.
     cadence = config.cli_cadence()
-    assert cadence["sweeps_per_day"] == 2
+    sweeps = cadence["sweeps_per_day"]
+    assert isinstance(sweeps, int) and sweeps >= 1
+    sweep_times = [k for k in cadence if k.endswith("_local")]
+    assert len(sweep_times) == sweeps, (
+        f"sweeps_per_day={sweeps} but {len(sweep_times)} *_local times "
+        f"configured: {sorted(sweep_times)}"
+    )
 
 
 # --- The load-bearing tests: missing keys RAISE ---------------------------
