@@ -77,6 +77,11 @@ cities:
 # Adjust once real posting times are known (see Open Questions).
 collection:
   nws_cli:
-    sweeps_per_day: 2
+    # Deployed schedule = 3 Task Scheduler runs (see scheduler/*.xml).
+    # 18:00 primary, 23:30 amendment recheck, 00:30 final safety sweep.
+    # Amendments/later reports append as new rows; the collector is
+    # idempotent by product_id so extra sweeps never duplicate.
+    sweeps_per_day: 3
     primary_sweep_local: "18:00"
     amendment_recheck_local: "23:30"
+    final_sweep_local: "00:30"
