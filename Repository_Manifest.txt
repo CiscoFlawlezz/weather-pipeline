@@ -1,0 +1,23 @@
+.gitignore
+README.md
+auto_backup.bat
+collectors/__init__.py
+collectors/kalshi_client.py
+collectors/nws_client.py
+config.yaml
+core/__init__.py
+core/climate_day.py
+core/config.py
+requirements.txt
+snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHAUS settlement rules.pdf
+snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHCHI settlement rules.pdf
+snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHMIA settlement rules.pdf
+snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHNY settlement rules.pdf
+snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHTPHX settlement rules.pdf
+storage/__init__.py
+storage/schema.sql
+storage/snapshots.py
+test_connections.py
+tests/test_climate_day.py
+tests/test_config.py
+tests/test_snapshots.py
