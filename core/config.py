@@ -98,6 +98,20 @@ def station(city: str) -> str:
     return _require(city_block, "station_id", f"cities.{city}")
 
 
+def cli_location_id(city: str) -> str:
+    """Return the NWS CLI product locationId for a city.
+
+    This is the location code the CLI product is filed under in the NWS
+    text-product API — NOT the station_id, and NOT the issuing office.
+    Confirmed empirically against /products/types/CLI/locations/{id}/latest.
+    Raises ConfigError if absent.
+    """
+    data = _load()
+    cities_block = _require(data, "cities", "config root")
+    city_block = _require(cities_block, city, "cities")
+    return _require(city_block, "cli_location_id", f"cities.{city}")
+
+
 def nws_user_agent() -> str:
     """Return the NWS User-Agent string. Raises ConfigError if absent."""
     data = _load()

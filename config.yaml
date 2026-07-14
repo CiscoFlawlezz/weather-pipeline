@@ -28,8 +28,9 @@ nws:
 
 cities:
   phoenix:
-    kalshi_series: "KXHIGHTPHX"     # series exists (live market URL + test_connections)
-    station_id: "KPHX"              # VERIFIED: Phoenix Sky Harbor, Kalshi rules 2026-07-09
+    kalshi_series: "KXHIGHTPHX"
+    station_id: "KPHX"
+    cli_location_id: "PHX"      # CONFIRMED via live API 2026-07-13: /products/types/CLI/locations/PHX/latest returns CLIPHX, issuingOffice KPSR, header "NATIONAL WEATHER SERVICE PHOENIX AZ"
     lat: 33.4484
     lon: -112.0740
     verified: true
