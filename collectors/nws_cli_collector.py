@@ -90,7 +90,7 @@ def collect_city(city: str, db_path: str) -> str:
     try:
         ensure_raw_nws_cli(conn)
         if already_have_product(conn, product_id):
-            return f"{city}: product {product_id} already stored — skipped"
+            return f"{city}: product {product_id} already stored - skipped"
 
         digest = store.snapshot(
             raw_bytes,
