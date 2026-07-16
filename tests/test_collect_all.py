@@ -8,25 +8,25 @@ Proves the six required behaviors of collect_all():
   5. Exit code is non-zero if any city failed.
   6. Exit code is zero only when all cities succeeded.
 
-collect_city() is NOT modified by this task. These tests mock it, so no
-network is touched and Phoenix's proven path is never exercised here --
-it is covered by its own tests and by live verification.
+collect_city() is NOT modified by this task. These tests mock it, so NO
+NETWORK IS TOUCHED. Phoenix's real path is covered by its own tests and by
+live verification.
+
+NOTE ON SCOPE: the __main__ block is deliberately NOT tested here. An earlier
+attempt used runpy.run_module(), which re-imports the module from source and
+therefore DISCARDS any monkeypatch -- the "mocked" test silently made a live
+network call to api.weather.gov instead. __main__ is kept to three trivial
+lines (call collect_all, print each result, sys.exit(exit_code_for(...))),
+whose correctness is provable by inspection and is confirmed by the live
+verification run. The exit-code CONTRACT is fully tested here via
+exit_code_for().
 
 Status: E4 -- AI-drafted, pending Architect ratification (Invariant 3).
 """
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
-from pathlib import Path
-
-import pytest
-
 from collectors import nws_cli_collector as m
 from core import config
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 # ----------------------------------------------------------------
@@ -219,62 +219,3 @@ def test_exit_code_nonzero_when_any_city_failed(monkeypatch):
     assert m.exit_code_for(m.collect_all("unused.db")) == 1, (
         "a single city failure must produce a non-zero exit code, or Task "
         "Scheduler records a false success")
-
-
-# ----------------------------------------------------------------
-# The __main__ contract, end to end via subprocess.
-# This is the only test that proves the ACTUAL exit code the wrapper sees.
-# ----------------------------------------------------------------
-
-def _run_main(tmp_path, injected_source):
-    """Run the collector's __main__ in a subprocess with collect_city patched
-    via a sitecustomize-style shim. Returns (returncode, stdout+stderr)."""
-    shim = tmp_path / "shim.py"
-    shim.write_text(injected_source, encoding="utf-8")
-    env = dict(os.environ)
-    # The shim lives in tmp_path, so the repo root is NOT on sys.path by
-    # default -- cwd alone does not put it there. PYTHONPATH does.
-    existing = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = (str(REPO_ROOT) + os.pathsep + existing
-                         if existing else str(REPO_ROOT))
-    proc = subprocess.run(
-        [sys.executable, str(shim), str(tmp_path / "test.db")],
-        cwd=str(REPO_ROOT), env=env,
-        capture_output=True, text=True, timeout=60)
-    return proc.returncode, proc.stdout + proc.stderr
-
-
-def test_main_exits_zero_when_all_cities_succeed(tmp_path):
-    source = '''
-import sys, runpy
-from collectors import nws_cli_collector as m
-m.collect_city = lambda city, db: f"{city}: stored FAKE"
-sys.argv = ["nws_cli_collector", sys.argv[1]]
-runpy.run_module("collectors.nws_cli_collector", run_name="__main__")
-'''
-    rc, out = _run_main(tmp_path, source)
-    assert rc == 0, f"expected exit 0, got {rc}. Output:\n{out}"
-    for city in ("phoenix", "nyc", "chicago", "miami", "austin"):
-        assert city in out, f"{city} missing from output:\n{out}"
-
-
-def test_main_exits_nonzero_when_a_city_fails(tmp_path):
-    source = '''
-import sys, runpy
-from collectors import nws_cli_collector as m
-
-def fake(city, db):
-    if city == "chicago":
-        raise RuntimeError("simulated chicago failure")
-    return f"{city}: stored FAKE"
-
-m.collect_city = fake
-sys.argv = ["nws_cli_collector", sys.argv[1]]
-runpy.run_module("collectors.nws_cli_collector", run_name="__main__")
-'''
-    rc, out = _run_main(tmp_path, source)
-    assert rc != 0, (
-        f"expected non-zero exit, got {rc}. Task Scheduler would record a "
-        f"FALSE SUCCESS. Output:\n{out}")
-    for city in ("phoenix", "nyc", "miami", "austin"):
-        assert city in out, f"{city} missing -- isolation broken:\n{out}"

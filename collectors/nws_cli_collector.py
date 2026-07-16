@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import sqlite3
 from datetime import datetime, timezone
+from typing import NamedTuple
 
 import requests
 
@@ -120,9 +121,51 @@ def collect_city(city: str, db_path: str) -> str:
         conn.close()
 
 
+class CityResult(NamedTuple):
+    """Outcome of one city's collection attempt.
+
+    ok=True covers BOTH outcomes collect_city returns normally: a row was
+    stored, OR the product was already stored and was skipped. A duplicate
+    skip is a success -- the data is present. Only an exception is a failure.
+    """
+    city: str
+    ok: bool
+    message: str
+
+
+def collect_all(db_path: str) -> list[CityResult]:
+    """Attempt every configured city; isolate failures; return one result each.
+
+    Each city is attempted independently. A failure in one city -- network,
+    parse, or ConfigError -- does NOT prevent the remaining cities from being
+    attempted (Architect ruling 2026-07-15: maximize non-backfillable accrual,
+    report truthfully). Never raises; the caller reads the results.
+    """
+    results: list[CityResult] = []
+    for city in config.cities():
+        try:
+            results.append(CityResult(city, True, collect_city(city, db_path)))
+        except Exception as exc:
+            results.append(CityResult(
+                city, False, f"{city}: FAILED - {type(exc).__name__}: {exc}"))
+    return results
+
+
+def exit_code_for(results) -> int:
+    """0 only if every city succeeded; 1 if any failed.
+
+    Task Scheduler reads this. A false success here would hide missed
+    collection, so any failure must propagate.
+    """
+    return 0 if all(r.ok for r in results) else 1
+
+
 if __name__ == "__main__":
     import sys
     from pathlib import Path
     db = sys.argv[1] if len(sys.argv) > 1 else "data/pipeline.db"
     Path(db).parent.mkdir(parents=True, exist_ok=True)
-    print(collect_city("phoenix", db))
+    results = collect_all(db)
+    for r in results:
+        print(r.message)
+    sys.exit(exit_code_for(results))
