@@ -1,16 +1,31 @@
 # ============================================================
-# Weather Pipeline Configuration — Milestone 1a
+# Weather Pipeline Configuration
 # ============================================================
-# IMPORTANT: The series tickers below are CANDIDATES, not verified
-# facts. Only KXHIGHTPHX (Phoenix) has been confirmed against a
-# live Kalshi market URL. Run `python test_connections.py` to
-# empirically verify which series exist before trusting this list.
+# STATUS (2026-07-15): All five city mappings are CONFIRMED against
+# two independent primary sources that agree:
 #
-# Each Kalshi weather market settles on ONE specific NWS station.
-# A wrong station mapping silently corrupts all downstream data,
-# so every station_id below must be verified against the official
-# market rules page on kalshi.com before Milestone 1b collection
-# begins. Verification status is tracked per city.
+#   1. Kalshi's machine-readable settlement_sources (GET /series/{ticker}),
+#      which names the exact NWS CLI product each contract settles on via
+#      a forecast.weather.gov product.php URL carrying site= and issuedby=.
+#   2. The Architect's direct read of each Kalshi rules page, 2026-07-09.
+#
+# KEY IDENTITY: Kalshi's `issuedby` parameter == the NWS CLI
+# `cli_location_id`. These were derived independently -- cli_location_id
+# was discovered by probing the NWS API, and Kalshi publishes issuedby as
+# its settlement source. They match for all five cities.
+#
+# Each Kalshi weather market settles on ONE specific NWS station, and a
+# wrong station mapping silently corrupts everything downstream. That
+# check is COMPLETE for all five cities (see per-city notes). Re-confirm
+# if Kalshi re-points a market: nothing in the pipeline detects drift in
+# settlement_sources today.
+#
+# `verified: true` means: this city's station_id is confirmed against the
+# Kalshi rules page / settlement source. It is a human-facing annotation --
+# no code reads it (grep-confirmed 2026-07-15).
+#
+# All of the above is E4 pending Architect ratification (Invariant 3),
+# except the 2026-07-09 rules-page reads, which are Architect-direct.
 
 kalshi:
   # Public market-data base URL (no authentication required for reads)
@@ -22,45 +37,95 @@ kalshi:
 nws:
   base_url: "https://api.weather.gov"
   # NWS requests a descriptive User-Agent identifying your app.
-  # Replace the email with yours — it's how NWS contacts you if
-  # your traffic causes a problem (instead of just blocking you).
+  # The email is how NWS contacts you if your traffic causes a
+  # problem (instead of just blocking you).
   user_agent: "prediction-market-research-lab (ryaneastnc@gmail.com)"
 
 cities:
   phoenix:
+    # CONFIRMED 2026-07-15: settlement_sources -> product.php?site=PSR&issuedby=PHX
+    # cert GLOBALTEMPERATURE.pdf. The 'T' in the ticker is real; title form
+    # differs from the other four ("Phoenix High Temperature Daily").
     kalshi_series: "KXHIGHTPHX"
     station_id: "KPHX"
-    cli_location_id: "PHX"      # CONFIRMED via live API 2026-07-13: /products/types/CLI/locations/PHX/latest returns CLIPHX, issuingOffice KPSR, header "NATIONAL WEATHER SERVICE PHOENIX AZ"
+    # CONFIRMED via live API 2026-07-13: CLIPHX, issuingOffice KPSR,
+    # "NATIONAL WEATHER SERVICE PHOENIX AZ". Equals Kalshi issuedby.
+    cli_location_id: "PHX"
     lat: 33.4484
     lon: -112.0740
     verified: true
+
   nyc:
-    kalshi_series: "KXHIGHNY"       # series exists per test_connections; NOT confirmed via rules page
-    station_id: "KNYC"              # VERIFIED: "Central Park, New York" (NHIGH rules, wfo=okx) 2026-07-09
+    # CONFIRMED 2026-07-15: settlement_sources -> product.php?site=OKX&issuedby=NYC
+    # cert NHIGH.pdf
+    kalshi_series: "KXHIGHNY"
+    # VERIFIED "Central Park, New York" (Architect rules-page read 2026-07-09);
+    # corroborated by settlement_sources 2026-07-15.
+    station_id: "KNYC"
+    # CONFIRMED 2026-07-15 via live API: CLINYC, issuingOffice KOKX,
+    # "THE CENTRAL PARK NY CLIMATE SUMMARY". Equals Kalshi issuedby.
+    # NOT LGA (CLILGA) and NOT JFK (CLIJFK) -- distinct products, proven by
+    # differing sha256 of the product bodies.
+    cli_location_id: "NYC"
     lat: 40.7789
     lon: -73.9692
     verified: true
+
   chicago:
-    kalshi_series: "KXHIGHCHI"      # series exists per test_connections; NOT confirmed via rules page
-    station_id: "KMDW"              # VERIFIED: "Chicago Midway, Illinois" (CHIHIGH rules, wfo=lot) 2026-07-09
+    # CONFIRMED 2026-07-15: settlement_sources -> product.php?site=LOT&issuedby=MDW
+    # source name "NWS Climatological Report Chicago Midway"; cert CHIHIGH.pdf
+    kalshi_series: "KXHIGHCHI"
+    # VERIFIED "Chicago Midway, Illinois" (Architect rules-page read 2026-07-09);
+    # corroborated by settlement_sources 2026-07-15.
+    station_id: "KMDW"
+    # CONFIRMED 2026-07-15 via live API: CLIMDW, issuingOffice KLOT,
+    # "THE CHICAGO-MIDWAY CLIMATE SUMMARY". Equals Kalshi issuedby.
+    # NOT ORD (CLIORD = O'Hare) and NOT LOT (CLILOT = Romeoville WFO) --
+    # distinct products, proven by differing sha256.
+    cli_location_id: "MDW"
     lat: 41.7868
     lon: -87.7522
     verified: true
+
   miami:
-    kalshi_series: "KXHIGHMIA"      # series exists per test_connections; NOT confirmed via rules page
-    station_id: "KMIA"              # VERIFIED: "Miami, FL" (MIAHIGH rules) 2026-07-09; 11am ET delay rule applies
+    # CONFIRMED 2026-07-15: settlement_sources -> product.php?site=MFL&issuedby=MIA
+    # cert MIAHIGH.pdf
+    kalshi_series: "KXHIGHMIA"
+    # VERIFIED "Miami, FL" (Architect rules-page read 2026-07-09);
+    # corroborated by settlement_sources 2026-07-15.
+    station_id: "KMIA"
+    # CONFIRMED 2026-07-15 via live API: CLIMIA, issuingOffice KMFL,
+    # "THE MIAMI CLIMATE SUMMARY". Equals Kalshi issuedby.
+    # NOT FLL (CLIFLL = Fort Lauderdale) -- distinct product, proven by sha256.
+    cli_location_id: "MIA"
+    # UNENCODED RULE: an 11am ET delay applies (Architect read 2026-07-09;
+    # exact rulebook text NOT yet captured). Affects settlement mapping,
+    # NOT collection. Primary source: MIAHIGH.pdf. Open Item #4 / F3.
     lat: 25.7933
     lon: -80.2906
     verified: true
+
   austin:
-    kalshi_series: "KXHIGHAUS"      # series exists per test_connections; NOT confirmed via rules page
-    station_id: "KAUS"              # VERIFIED: "Austin Bergstrom" (AUSHIGH rules) 2026-07-09; trades CT; 11am ET delay rule
+    # CONFIRMED 2026-07-15: settlement_sources -> product.php?site=EWX&issuedby=AUS
+    # cert AUSHIGH.pdf
+    kalshi_series: "KXHIGHAUS"
+    # VERIFIED "Austin Bergstrom" (Architect rules-page read 2026-07-09);
+    # corroborated by settlement_sources 2026-07-15.
+    station_id: "KAUS"
+    # CONFIRMED 2026-07-15 via live API: CLIAUS, issuingOffice KEWX,
+    # "THE AUSTIN BERGSTROM CLIMATE SUMMARY". Equals Kalshi issuedby.
+    # NOT ATT (CLIATT = Camp Mabry) -- distinct product, proven by sha256.
+    cli_location_id: "AUS"
+    # UNENCODED RULE: an 11am ET delay applies; market trades CT (Architect
+    # read 2026-07-09; exact rulebook text NOT yet captured). Affects
+    # settlement mapping, NOT collection. Primary source: AUSHIGH.pdf.
+    # Open Item #4 / F3.
     lat: 30.1975
     lon: -97.6664
     verified: true
 
 # ============================================================
-# Collection cadence — added for M2.T4 (CLI collector) + scheduler
+# Collection cadence -- added for M2.T4 (CLI collector) + scheduler
 # ============================================================
 # How often each collector fetches. The CLI Daily Climate Report
 # is published once per station per day (and occasionally amended),
