@@ -30,7 +30,8 @@ If PowerShell blocks the venv activation script, run once:
 
 1. Kalshi API reachable (exchange status)
 2. Which candidate weather series tickers in `config.yaml` actually
-   exist (empirical verification — only Phoenix was pre-verified)
+   exist (empirical verification). NOTE: series existence is NOT the
+   same claim as the rules-page station check. See below.
 3. Live open markets + real candlestick data for one settled market
 4. NWS points → hourly forecast chain, plus a live station observation
 
@@ -39,11 +40,21 @@ If PowerShell blocks the venv activation script, run once:
 - **No authentication:** market-data reads are public per Kalshi's
   docs. Your API key is intentionally unused until a much later
   milestone — code that never holds a key can never leak one.
-- **Station IDs unverified:** every `station_id` in config.yaml must
-  be checked against the official rules page of the corresponding
-  Kalshi market before Milestone 1b begins. A wrong station silently
-  corrupts everything downstream. Flip `verified: true` per city as
-  you confirm each one.
+- **Station IDs: VERIFIED (2026-07-15).** All five `station_id`
+  values in config.yaml are confirmed against two independent primary
+  sources that agree: the Architect's direct read of each Kalshi rules
+  page (2026-07-09), and Kalshi's machine-readable `settlement_sources`
+  field from `GET /series/{ticker}`, which names the exact NWS CLI
+  product each contract settles on. That field's `issuedby` parameter
+  equals the NWS CLI `cli_location_id`.
+
+  A wrong station silently corrupts everything downstream, so re-run
+  the `settlement_sources` check if Kalshi ever re-points a market —
+  nothing in the pipeline detects that drift today.
+
+  `verified: true` in config.yaml means exactly this rules-page /
+  settlement-source check. It does NOT mean "the series ticker exists"
+  (a weaker claim, which is what test_connections.py proves).
 - **This code has not run against the live APIs yet.** It was written
   in a sandbox without network access to kalshi.com/weather.gov, so
   the first run on your machine IS the integration test. If anything
@@ -56,7 +67,7 @@ If PowerShell blocks the venv activation script, run once:
 
 ```
 weather-pipeline/
-├── config.yaml            # cities, tickers, stations (verification flags)
+├── config.yaml            # cities, tickers, stations, cli_location_ids
 ├── requirements.txt
 ├── test_connections.py    # Milestone 1a: run this
 ├── collectors/
@@ -75,5 +86,14 @@ weather-pipeline/
   one nightly Kalshi sweep)
 - Success criterion: 14 consecutive days, zero silent failures
 
+---
 
-
+> **README STALENESS NOTICE (2026-07-15).** This document still
+> describes Milestone 1a. The repo has since shipped storage,
+> the NWS CLI collector, and scheduled collection. The following
+> are known stale and NOT yet corrected: the title, the "no storage,
+> no scheduling yet" scope line, the "has not run against the live
+> APIs yet" limitation, the project-structure tree, and the
+> "Milestone 1b (next)" section. Only the station-verification
+> claims were corrected in this pass. Bringing the rest current is
+> a separate task.
