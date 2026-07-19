@@ -1,23 +1,42 @@
 .gitignore
 README.md
+Repository_Manifest.txt
+SESSION_LOG_2026-07-15.md
+SESSION_LOG_2026-07-16.md
 auto_backup.bat
 collectors/__init__.py
 collectors/kalshi_client.py
+collectors/kalshi_observation_collector.py
+collectors/nws_cli_collector.py
 collectors/nws_client.py
 config.yaml
 core/__init__.py
 core/climate_day.py
 core/config.py
+generate_manifest.sh
 requirements.txt
+run_backup.bat
+run_cli_collection.bat
+run_kalshi_observations.bat
+scheduler/SETUP_GUIDE.md
+scheduler/WeatherPipeline_Backup.xml
+scheduler/WeatherPipeline_CLI_Amendment.xml
+scheduler/WeatherPipeline_CLI_Final.xml
+scheduler/WeatherPipeline_CLI_Primary.xml
+scripts/backup_db.py
 snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHAUS settlement rules.pdf
 snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHCHI settlement rules.pdf
 snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHMIA settlement rules.pdf
 snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHNY settlement rules.pdf
 snapshots/2026-07-09_station_verification/2026-07-09 - Kalshi - KXHIGHTPHX settlement rules.pdf
 storage/__init__.py
+storage/schema.py
 storage/schema.sql
 storage/snapshots.py
 test_connections.py
+tests/test_cli_parser.py
 tests/test_climate_day.py
+tests/test_collect_all.py
 tests/test_config.py
+tests/test_kalshi_observations.py
 tests/test_snapshots.py
