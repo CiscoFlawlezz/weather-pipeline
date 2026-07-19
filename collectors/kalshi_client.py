@@ -134,6 +134,65 @@ class KalshiClient:
             params=params,
         )
 
+    # ------------------------------------------------------------------
+    # Raw fetch (bytes + Date header preserved) for the depth collector
+    # ------------------------------------------------------------------
+    # M1.T2 needs THREE things _get() throws away:
+    #   1. the raw response bytes, to snapshot verbatim (content-addressed);
+    #   2. the server Date header, as the per-fetch timestamp used to make
+    #      the skew between the two calls of one observation auditable;
+    #   3. the parsed JSON, for field extraction.
+    # This helper returns all three. It reuses the same session, timeout,
+    # and KalshiError as _get so there is one HTTP code path, not two.
+    def _get_raw(self, path: str, params: Optional[dict] = None) -> tuple:
+        """GET a path; return (parsed_json, raw_bytes, server_date_header).
+
+        server_date_header is the response 'Date' header as a string, or
+        None if the server did not send one. Raises KalshiError on any
+        network error or non-200 status, exactly like _get.
+        """
+        url = f"{self.base_url}{path}"
+        try:
+            resp = self.session.get(url, params=params, timeout=self.timeout)
+        except requests.RequestException as exc:
+            raise KalshiError(f"Network error calling {url}: {exc}") from exc
+
+        if resp.status_code != 200:
+            raise KalshiError(
+                f"HTTP {resp.status_code} from {url}: {resp.text[:500]}"
+            )
+
+        # resp.content is the raw bytes exactly as received (before any
+        # decoding); this is what we snapshot. resp.json() re-parses the
+        # same bytes. A malformed body raises ValueError here, which we
+        # convert to KalshiError so the collector treats it as a failed
+        # fetch and writes no row.
+        raw_bytes = resp.content
+        server_date = resp.headers.get("Date")
+        try:
+            parsed = resp.json()
+        except ValueError as exc:
+            raise KalshiError(f"Malformed JSON from {url}: {exc}") from exc
+        return parsed, raw_bytes, server_date
+
+    def get_orderbook_raw(self, ticker: str) -> tuple:
+        """Fetch one market's order book. Returns (json, raw_bytes, date).
+
+        The book has the shape {"orderbook_fp": {"yes_dollars": [...],
+        "no_dollars": [...]}} where each side is a list of
+        [price_string, size_string] pairs. Either side may be empty.
+        """
+        return self._get_raw(f"/markets/{ticker}/orderbook")
+
+    def get_market_raw(self, ticker: str) -> tuple:
+        """Fetch one market's detail object. Returns (json, raw_bytes, date).
+
+        The detail has the shape {"market": {...}} carrying fast-moving
+        state (status, volume_fp, open_interest_fp, liquidity_dollars,
+        yes_bid/ask, sizes) plus slow-moving reference data.
+        """
+        return self._get_raw(f"/markets/{ticker}")
+
 
 # ----------------------------------------------------------------------
 # Convenience parsing (kept separate from fetching on purpose)

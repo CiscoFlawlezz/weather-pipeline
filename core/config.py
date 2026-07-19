@@ -143,6 +143,21 @@ def cli_cadence() -> dict[str, Any]:
     return _require(collection_block, "nws_cli", "collection")
 
 
+def kalshi_observation_cadence() -> dict[str, Any]:
+    """Return the kalshi_observations collection cadence block.
+
+    Mirrors cli_cadence(): returns the whole collection.kalshi_observations
+    mapping (e.g. {'cadence_minutes': 5}) so the scheduler and any future
+    caller read cadence from config, never a hardcoded literal (D4). The
+    collector itself performs one sweep per invocation and is time-agnostic;
+    changing cadence is a config edit plus a scheduler interval change, with
+    no code or schema change. Raises ConfigError if the block is absent.
+    """
+    data = _load()
+    collection_block = _require(data, "collection", "config root")
+    return _require(collection_block, "kalshi_observations", "collection")
+
+
 def cutoffs() -> dict[str, Any]:
     """Return per-city forecast cutoff times.
 

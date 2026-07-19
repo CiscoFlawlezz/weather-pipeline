@@ -32,3 +32,58 @@ def ensure_raw_nws_cli(conn: sqlite3.Connection) -> None:
         )
         """
     )
+
+
+def ensure_kalshi_observations(conn: sqlite3.Connection) -> None:
+    """Append-only Kalshi order-book + market-state observations (M1.T2).
+
+    One row per successful collection cycle for one ticker. A cycle is
+    two fetches (order book + market detail) that BOTH succeed; if either
+    fails, no row is written (transactional atomicity of the write).
+
+    Depth is irreversible: candlestick OHLC does not preserve the bid/ask
+    ladder. Both ladders are stored verbatim as JSON text (an empty side
+    is stored as "[]"). Prices and sizes are kept as TEXT exactly as the
+    API returns them (fixed-point strings) so no float rounding is ever
+    introduced. Three timestamps are recorded so any skew between the two
+    fetches is measurable and auditable, never hidden.
+
+    Slow-moving reference data (settlement rules, strike geometry,
+    expiration) is NOT duplicated here; it lives in kalshi_markets. The
+    raw market response is snapshotted, so that data remains recoverable.
+    """
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS kalshi_observations (
+            id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker                  TEXT NOT NULL,
+            city                    TEXT NOT NULL,
+            collected_at            TEXT NOT NULL,
+            orderbook_fetch_utc     TEXT,
+            market_fetch_utc        TEXT,
+            status                  TEXT,
+            volume_fp               TEXT,
+            volume_24h_fp           TEXT,
+            open_interest_fp        TEXT,
+            liquidity_dollars       TEXT,
+            yes_bid_dollars         TEXT,
+            yes_ask_dollars         TEXT,
+            no_bid_dollars          TEXT,
+            no_ask_dollars          TEXT,
+            yes_bid_size_fp         TEXT,
+            yes_ask_size_fp         TEXT,
+            orderbook_yes_json      TEXT NOT NULL,
+            orderbook_no_json       TEXT NOT NULL,
+            orderbook_snapshot_hash TEXT NOT NULL,
+            market_snapshot_hash    TEXT NOT NULL,
+            ingest_time_utc         TEXT NOT NULL,
+            collector_version       TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_kobs_ticker_time
+            ON kalshi_observations (ticker, collected_at)
+        """
+    )

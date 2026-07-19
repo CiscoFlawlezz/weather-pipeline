@@ -150,3 +150,20 @@ collection:
     primary_sweep_local: "18:00"
     amendment_recheck_local: "23:30"
     final_sweep_local: "00:30"
+
+  # ----------------------------------------------------------
+  # Kalshi order-book depth + market-state observations (M1.T2)
+  # ----------------------------------------------------------
+  # One observation = one order book fetch + one market fetch for a
+  # ticker, both succeeding, written atomically. This is [ACC][IRR]
+  # data: candlestick OHLC does not preserve the bid/ask ladder, so
+  # any interval not sampled here is lost permanently.
+  #
+  # cadence_minutes is the sampling interval. The collector runs one
+  # sweep per invocation; the scheduler fires it every cadence_minutes.
+  # Changing 5 -> 1 is a config edit plus a scheduler interval change,
+  # with NO code or schema change. 5 min captures the large majority of
+  # intraday depth movement at gentle API load (~120 requests spread
+  # over a 5-minute window vs the Basic-tier ~20 reads/sec ceiling).
+  kalshi_observations:
+    cadence_minutes: 5
