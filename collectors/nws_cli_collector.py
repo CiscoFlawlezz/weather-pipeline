@@ -6,13 +6,18 @@ Parser built against a real captured Phoenix sample (2026-07-13). Amendments
 and later reports append as new rows; a re-fetch of the identical product_id
 is skipped. high/low may be None when the report shows MM (missing).
 
+climate_day is derived from the report BODY (the "CLIMATE SUMMARY FOR <DATE>"
+header plus the TODAY/YESTERDAY block), never from the issuance timestamp.
+Parser v1 keyed summaries one day late because it used the issuance day;
+summaries describe YESTERDAY. See F-01 (2026-07-19).
+
 Status: E4 — AI-drafted, pending Architect ratification (Invariant 3).
 """
 from __future__ import annotations
 
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import NamedTuple
 
 import requests
@@ -22,7 +27,7 @@ from core.climate_day import climate_day
 from storage.schema import ensure_raw_nws_cli
 from storage.snapshots import SnapshotStore
 
-PARSER_VERSION = "1"
+PARSER_VERSION = "2"
 API_BASE = "https://api.weather.gov"
 
 
@@ -59,6 +64,85 @@ def parse_report_kind(product_text: str) -> str:
     if "VALID TODAY AS OF" in upper or "VALID AS OF" in upper:
         return "preliminary"
     return "summary"
+
+
+_MONTHS = {
+    "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
+    "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11,
+    "DECEMBER": 12,
+}
+
+
+def derive_covered_day(product_text: str, issuance_day: str) -> tuple[str, str, int]:
+    """Derive the calendar day a CLI product COVERS, from the body itself.
+
+    The covered day is stated in the product, not inferred from the issuance
+    timestamp. Two body features carry it:
+
+      - The header line  ``...CLIMATE SUMMARY FOR <MONTH DAY YEAR>...``  names
+        the covered day directly. This is the authority for the returned value.
+      - The block marker distinguishes report semantics:
+          preliminary -> a ``VALID ... AS OF`` line is present, data under TODAY,
+                         and header day == issuance day.
+          summary     -> no VALID line, data under YESTERDAY,
+                         and header day == issuance day - 1.
+
+    Verified 2026-07-19 against all 8 summary + 2 preliminary snapshot bodies
+    on disk (F-01 adjudication): every summary describes YESTERDAY, every
+    preliminary describes TODAY, and the header day equals the covered day in
+    every case. The issuance timestamp is metadata only and never determines
+    the covered day.
+
+    Args:
+        product_text: the raw CLI product body (verbatim snapshot bytes decoded).
+        issuance_day: climate_day(city, issuanceTime).isoformat() -- used ONLY
+            as a cross-check reference, never as the returned value.
+
+    Returns:
+        (covered_day_iso, block_marker, flag) where
+          covered_day_iso : 'YYYY-MM-DD' parsed from the header, or '' if the
+                            header cannot be parsed (caller must treat '' as a
+                            hard parse failure, not a silent default).
+          block_marker    : 'TODAY' | 'YESTERDAY' | 'UNKNOWN'
+          flag            : integer bitfield making divergence visible --
+                            bit 0 (1) : covered_day != issuance_day
+                            bit 1 (2) : marker inconsistent with header-vs-issuance
+                                        offset (drift; store both, do not reconcile)
+                            0 == fully consistent.
+    """
+    upper = product_text.upper()
+
+    # -- header day (the authority) --
+    m = re.search(r"CLIMATE SUMMARY FOR ([A-Z]+)\s+(\d{1,2})\s+(\d{4})", upper)
+    covered = ""
+    if m and m.group(1) in _MONTHS:
+        covered = f"{int(m.group(3)):04d}-{_MONTHS[m.group(1)]:02d}-{int(m.group(2)):02d}"
+
+    # -- block marker (semantics discriminator; same signal parse_report_kind uses) --
+    if "VALID TODAY AS OF" in upper or "VALID AS OF" in upper:
+        marker = "TODAY"
+    elif re.search(r"\n\s*YESTERDAY\b", upper):
+        marker = "YESTERDAY"
+    else:
+        marker = "UNKNOWN"
+
+    # -- cross-checks (visibility, not reconciliation) --
+    flag = 0
+    if covered and covered != issuance_day:
+        flag |= 1
+
+    if covered:
+        try:
+            cy, cm, cd = (int(x) for x in covered.split("-"))
+            iy, im, idd = (int(x) for x in issuance_day.split("-"))
+            delta = (date(cy, cm, cd) - date(iy, im, idd)).days
+        except (ValueError, TypeError):
+            delta = None
+        expected = {"TODAY": 0, "YESTERDAY": -1}.get(marker)
+        if expected is not None and delta is not None and delta != expected:
+            flag |= 2
+
+    return covered, marker, flag
 
 
 def fetch_latest_cli(location_id: str) -> dict:
@@ -100,7 +184,14 @@ def collect_city(city: str, db_path: str) -> str:
 
         ts = (datetime.fromisoformat(issuance.replace("Z", "+00:00"))
               if issuance else datetime.now(timezone.utc))
-        cday = climate_day(city, ts).isoformat()
+        issuance_day = climate_day(city, ts).isoformat()
+        covered_day, block_marker, mismatch_flag = derive_covered_day(
+            raw_text, issuance_day)
+        if not covered_day:
+            raise ValueError(
+                f"{city}: could not parse covered day from CLI header "
+                f"(product {product_id}); refusing to fall back to issuance day")
+        cday = covered_day
         high, low = parse_high_low(raw_text)
         kind = parse_report_kind(raw_text)
 
@@ -110,11 +201,13 @@ def collect_city(city: str, db_path: str) -> str:
                 INSERT INTO raw_nws_cli
                     (station_id, location_id, product_id, issuance_time_utc,
                      climate_day, report_kind, high_temp_f, low_temp_f,
+                     covered_day_issuance_mismatch,
                      snapshot_hash, ingest_time_utc, parser_version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (station, location_id, product_id, issuance, cday, kind,
-                 high, low, digest, _utc_now_iso(), PARSER_VERSION))
+                 high, low, mismatch_flag,
+                 digest, _utc_now_iso(), PARSER_VERSION))
         return (f"{city}: stored {product_id} | climate_day {cday} | "
                 f"{kind} | high={high} low={low} | snap {digest[:12]}...")
     finally:

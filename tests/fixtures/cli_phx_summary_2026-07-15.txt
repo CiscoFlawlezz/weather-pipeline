@@ -1,0 +1,99 @@
+
+000
+CDUS45 KPSR 160842
+CLIPHX
+
+CLIMATE REPORT 
+NATIONAL WEATHER SERVICE PHOENIX AZ
+142 AM MST THU JUL 16 2026
+
+...................................
+
+...THE PHOENIX AZ CLIMATE SUMMARY FOR JULY 15 2026...
+
+CLIMATE NORMAL PERIOD 1991 TO 2020
+CLIMATE RECORD PERIOD 1895 TO 2026
+
+
+WEATHER ITEM   OBSERVED TIME   RECORD YEAR NORMAL DEPARTURE LAST      
+                VALUE   (LST)  VALUE       VALUE  FROM      YEAR     
+                                                  NORMAL           
+...................................................................
+TEMPERATURE (F)                                                          
+ YESTERDAY                                                           
+  MAXIMUM        109    407 PM 118    2023 107      2      107       
+  MINIMUM         89   1156 PM  66    1905  85      4       86       
+  AVERAGE         99                        96      3       97     
+
+PRECIPITATION (IN)                                                    
+  YESTERDAY        0.00          0.72 1999   0.04  -0.04     0.00     
+  MONTH TO DATE    0.38                      0.33   0.05     0.16     
+  SINCE OCT 1      4.78                      5.14  -0.36     1.63     
+  SINCE JAN 1      0.70                      3.27  -2.57     1.63     
+
+SNOWFALL (IN)                                                              
+  YESTERDAY        0.0                                                
+  MONTH TO DATE    0.0                                                
+  SINCE JAN 1      0.0                                                
+  SINCE JUL 1      0.0                                                
+  SNOW DEPTH       0                                                 
+
+DEGREE DAYS                                                           
+ HEATING                                                              
+  YESTERDAY        0                         0      0        0        
+  MONTH TO DATE    0                         0      0        0        
+  SINCE JUN 1      0                         0      0        0        
+  SINCE JUL 1      0                         0      0        0        
+
+ COOLING                                                              
+  YESTERDAY       34                        31      3       32        
+  MONTH TO DATE  483                       457     26      507        
+  SINCE JUN 1   1392                      1249    143     1369        
+  SINCE JAN 1   2935                      2159    776     2465        
+...................................................................
+
+
+WIND (MPH)                                                            
+  HIGHEST WIND SPEED    36   HIGHEST WIND DIRECTION     E (80)        
+  HIGHEST GUST SPEED    46   HIGHEST GUST DIRECTION     E (70)        
+  AVERAGE WIND SPEED    10.6                                        
+
+
+SKY COVER                                                             
+  AVERAGE SKY COVER 0.7                                                 
+
+
+WEATHER CONDITIONS                                                    
+THE FOLLOWING WEATHER WAS RECORDED YESTERDAY.                         
+  THUNDERSTORM                                                        
+  HAZE                                                                
+
+
+RELATIVE HUMIDITY (PERCENT)
+ HIGHEST    40           400 AM                                      
+ LOWEST     21           500 PM                                      
+ AVERAGE    31                                                        
+
+..........................................................
+
+
+THE PHOENIX AZ CLIMATE NORMALS FOR TODAY
+                         NORMAL    RECORD    YEAR                     
+ MAXIMUM TEMPERATURE (F)  107       118      1925                      
+ MINIMUM TEMPERATURE (F)   85        68      1907                      
+
+
+SUNRISE AND SUNSET                                                    
+JULY 16 2026..........SUNRISE   530 AM MST   SUNSET   738 PM MST     
+JULY 17 2026..........SUNRISE   531 AM MST   SUNSET   738 PM MST     
+
+
+-  INDICATES NEGATIVE NUMBERS.
+R  INDICATES RECORD WAS SET OR TIED.
+MM INDICATES DATA IS MISSING.
+T  INDICATES TRACE AMOUNT.
+
+
+
+
+$$

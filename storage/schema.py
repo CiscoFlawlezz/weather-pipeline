@@ -24,6 +24,7 @@ def ensure_raw_nws_cli(conn: sqlite3.Connection) -> None:
             issuance_time_utc TEXT,
             climate_day       TEXT,
             report_kind       TEXT,
+            covered_day_issuance_mismatch INTEGER,
             high_temp_f       INTEGER,
             low_temp_f        INTEGER,
             snapshot_hash     TEXT NOT NULL,
