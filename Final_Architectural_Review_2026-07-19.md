@@ -174,6 +174,34 @@ Append-only with corrections-as-rows; content-addressed snapshots with in-transa
 
 ## 15. Immediate Actions (next 30 days, in order)
 
+> **RESOLUTION — Actions 1–2 (2026-07-20, E4 pending ratification).**
+> *This note is E4; verify against commit `fa0a99f` and the snapshot store.*
+> Action 1 (adjudicate) is **done**; Action 2 (parser v2) is **partially done —
+> code shipped, migration still pending.** The snapshot bodies were read for the
+> contradictory 07-15 Phoenix rows and the 07-16 NYC row. §1 is CONFIRMED as a
+> real defect **with one correction to its stated mechanism:** the summaries are
+> not mis-keyed *because they were issued after local midnight* — every CLI
+> `summary` describes YESTERDAY regardless of issuance hour (a summary issued at
+> 8 PM would still cover the prior day). The post-midnight timing in §1 was a
+> coincidental correlation, not the cause; the true invariant is
+> report-semantic. Verified mechanically across all 8 summary bodies on disk
+> (each carries a YESTERDAY block, none TODAY, each stored one day past its
+> `CLIMATE SUMMARY FOR` header day) and both preliminary bodies (TODAY block,
+> header day == stored day == correct).
+>
+> Parser v2 shipped in commit `fa0a99f` (pushed to origin/main): `climate_day`
+> now derives from the product header + block marker, cross-checked against the
+> issuance-derived day, disagreement stored via a `covered_day_issuance_mismatch`
+> flag — exactly the §15.2 / §13.1 prescription. Preliminary path provably
+> unchanged. Regression tests run on the real captured Phoenix summary and
+> preliminary bodies (committed as fixtures, per §16). Full suite: 73 passed.
+>
+> **NOT yet done:** re-derivation of the 8 existing mis-keyed summary rows as new
+> parser_version=2 rows. Migration is planned (append-only inserts, +8 rows,
+> `ALTER TABLE ADD COLUMN` for the flag on the live DB, DELETE-by-parser_version
+> rollback) but **not executed** — separate Architect authorization required.
+> The 8 v1 rows remain untouched as historical evidence.
+
 1. **Adjudicate the climate_day question.** Pull the snapshot bodies for the contradictory 07-15 Phoenix rows and the 07-16 NYC row; read the covered-day line in each product. (Ten minutes; settles §1 as fact or clears it.)
 2. If confirmed: **parser v2** extracts the covered day from the product text; re-derive `climate_day` for all existing rows *as new columns/rows under parser_version 2* (append-only correction, never overwrite); add cross-check logic and a mismatch flag.
 3. **Add a `collection_runs` row per collector invocation** (collector, started, finished, status, per-unit counts) and a 20-line daily completeness query. This *is* the gap audit.
