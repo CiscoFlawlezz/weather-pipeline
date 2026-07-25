@@ -25,6 +25,7 @@ import yaml
 # core/config.py -> parent is core/ -> parent is the repo root.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CONFIG_PATH = _REPO_ROOT / "config.yaml"
+_SECRETS_PATH = _REPO_ROOT / "secrets.yaml"
 
 
 class ConfigError(KeyError):
@@ -46,6 +47,29 @@ def _load() -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ConfigError(
             f"config.yaml did not parse to a mapping (got {type(data).__name__})"
+        )
+    return data
+
+
+def _load_secrets() -> dict[str, Any]:
+    """Read and parse secrets.yaml. Raises ConfigError if it is missing.
+
+    Deliberately a SEPARATE file from config.yaml, not a new section in it.
+    config.yaml is committed to git; a notify topic is credential-like
+    (anyone who knows it can post to it), so it must never enter committed
+    source. secrets.yaml is listed in .gitignore and is expected to not
+    exist on a fresh clone -- callers must handle ConfigError as "not
+    configured yet", not treat it as fatal.
+    """
+    if not _SECRETS_PATH.exists():
+        raise ConfigError(
+            f"secrets.yaml not found at expected path: {_SECRETS_PATH}"
+        )
+    with _SECRETS_PATH.open("r", encoding="utf-8") as fh:
+        data = yaml.safe_load(fh)
+    if not isinstance(data, dict):
+        raise ConfigError(
+            f"secrets.yaml did not parse to a mapping (got {type(data).__name__})"
         )
     return data
 
@@ -156,6 +180,23 @@ def kalshi_observation_cadence() -> dict[str, Any]:
     data = _load()
     collection_block = _require(data, "collection", "config root")
     return _require(collection_block, "kalshi_observations", "collection")
+
+
+def notify_config() -> dict[str, Any]:
+    """Return {'topic': ..., 'server': ...} for failure notifications.
+
+    Reads secrets.yaml (NOT config.yaml -- see _load_secrets), so the ntfy
+    topic never enters committed source. 'server' defaults to
+    https://ntfy.sh if secrets.yaml doesn't override it. Raises ConfigError
+    if secrets.yaml is absent or missing notify.ntfy_topic -- callers that
+    treat notification as advisory (e.g. scripts/notify_failure.py) must
+    catch this and no-op loudly, not let it propagate.
+    """
+    data = _load_secrets()
+    notify_block = _require(data, "notify", "secrets.yaml root")
+    topic = _require(notify_block, "ntfy_topic", "notify")
+    server = notify_block.get("ntfy_server", "https://ntfy.sh")
+    return {"topic": topic, "server": server}
 
 
 def cutoffs() -> dict[str, Any]:

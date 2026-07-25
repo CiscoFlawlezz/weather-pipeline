@@ -52,6 +52,7 @@ REM --- Move to the repo root so relative imports resolve ------
 cd /d "%REPO%"
 if errorlevel 1 (
     echo [!NOW!] FATAL: cannot cd to %REPO% >> "%LOGFILE%"
+    "%PYTHON%" "%REPO%\scripts\notify_failure.py" --wrapper cli_collection --rc 20 >> "%LOGFILE%" 2>&1
     exit /b 20
 )
 
@@ -81,6 +82,7 @@ if "!RC!"=="0" (
 )
 
 echo [%DATE% %TIME%] FAILURE on attempt 2 ^(exit !RC!^) -- giving up >> "%LOGFILE%"
+"%PYTHON%" "%REPO%\scripts\notify_failure.py" --wrapper cli_collection --rc !RC! >> "%LOGFILE%" 2>&1
 REM Propagate a non-zero code so Task Scheduler records "Last Run
 REM Result" as a failure (0x1 etc.), never a false success.
 exit /b !RC!

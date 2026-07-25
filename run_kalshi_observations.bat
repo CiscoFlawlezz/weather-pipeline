@@ -54,6 +54,7 @@ REM --- Move to the repo root so relative imports resolve ------
 cd /d "%REPO%"
 if errorlevel 1 (
     echo [!NOW!] FATAL: cannot cd to %REPO% >> "%LOGFILE%"
+    "%PYTHON%" "%REPO%\scripts\notify_failure.py" --wrapper kalshi_observations --rc 20 >> "%LOGFILE%" 2>&1
     exit /b 20
 )
 
@@ -81,4 +82,5 @@ if "!RC!"=="0" (
 )
 
 echo [%DATE% %TIME%] FAILURE on attempt 2 ^(exit !RC!^) -- giving up >> "%LOGFILE%"
+"%PYTHON%" "%REPO%\scripts\notify_failure.py" --wrapper kalshi_observations --rc !RC! >> "%LOGFILE%" 2>&1
 exit /b !RC!
