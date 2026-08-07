@@ -1,4 +1,46 @@
 -- ============================================================
+-- RETIRED 2026-08-06. THIS FILE CREATES NOTHING.
+-- ============================================================
+-- Retired into archive/ under Final_Architectural_Review_2026-07-19.md
+-- section 16 ("Retire schema.sql into an archive/ with a header, single
+-- schema authority in schema.py"), by Architect ruling 2026-08-06.
+--
+-- STATUS: historical design record. Preserved, not deleted, per the
+-- project's append-only discipline: corrections supersede, they never
+-- erase. Moved with `git mv`, so the full history follows the file.
+--
+-- storage/schema.py IS THE SOLE SCHEMA AUTHORITY. Live table DDL is
+-- ensure_raw_nws_cli() and ensure_kalshi_observations(), called by the
+-- collectors at runtime. DO NOT ADD TABLES HERE. A table added to this
+-- file will never be created by anything.
+--
+-- THE SPECIFIC TRAP THIS FILE SETS:
+--   The `PRAGMA journal_mode = WAL;` below HAS NEVER EXECUTED. Nothing
+--   in the repository reads, opens, or executes this file. WAL is set at
+--   runtime, per connection, by
+--   storage/snapshots.py::SnapshotStore._connect(). Any document citing
+--   "schema.sql line 1" as the REASON pipeline.db runs in WAL mode is
+--   making a false causal claim, however true its conclusion. Known
+--   instances are tracked separately and are not corrected by this move.
+--
+-- NONE of the tables defined below exists in the live database. Architect
+-- query, 2026-08-05: data/pipeline.db holds exactly five tables --
+-- kalshi_observations, raw_nws_cli, snapshot_blob, snapshot_index,
+-- sqlite_sequence. collection_runs, nws_forecast_snapshots,
+-- nws_observations, kalshi_markets, kalshi_candlesticks and
+-- kalshi_settlements are ABSENT.
+--
+-- collection_runs below is a live design input, not dead weight. It is
+-- the starting point for the run-audit table prescribed by section 15.3
+-- (Final_Architectural_Review_2026-07-19.md:207 -- collector, started,
+-- finished, status, per-unit counts; the daily completeness query is
+-- "the gap audit"). Cite this path when that table is built rather than
+-- rediscovering the columns.
+--
+-- Status: E4 -- AI-drafted, pending Architect ratification (Invariant 3).
+-- ============================================================
+
+-- ============================================================
 -- Weather Pipeline Schema — Milestone 1 (SQLite)
 -- ============================================================
 -- Design rules encoded here:
